@@ -1,0 +1,127 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-pragma">{-# LANGUAGE UndecidableInstances #-}</span><span>
+</span><span id="line-2"></span><span>
+</span><span id="line-3"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Control.Effect.Error</span><span>
+</span><span id="line-4"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier">Error</span></a></span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-5"></span><span>  </span><span class="annot"><span class="hs-comment">-- * Pure @Error@ handler</span></span><span>
+</span><span id="line-6"></span><span>  </span><span class="hs-comment">--</span><span>
+</span><span id="line-7"></span><span>  </span><span class="hs-comment">-- | For historical reasons, the canonical handler for the 'Error' effect provided by</span><span>
+</span><span id="line-8"></span><span>  </span><span class="hs-comment">-- @transformers@ has the name 'ExceptT', not @ErrorT@. To avoid confusion, this library does not</span><span>
+</span><span id="line-9"></span><span>  </span><span class="hs-comment">-- export it under a different alias. However, the handler function is still named 'runError'.</span><span>
+</span><span id="line-10"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#runError"><span class="hs-identifier">runError</span></a></span><span>
+</span><span id="line-11"></span><span>  </span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">ExceptT</span></span><span>
+</span><span id="line-12"></span><span>  </span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-13"></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Except</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Trans</span></span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Control.Effect.Internal.html"><span class="hs-identifier">Control.Effect.Internal</span></a></span><span>
+</span><span id="line-17"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Control.Monad.Trans.Except</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">ExceptT</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier">runExceptT</span></span><span class="hs-special">)</span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- | @'Error' e@ is an effect that allows throwing and catching errors of type @e@. Note that these</span><span>
+</span><span id="line-20"></span><span class="hs-comment">-- have no relation to Haskell&#8217;s built-in support for synchronous or asynchronous runtime exceptions</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- provided from &quot;Control.Exception&quot;.</span><span>
+</span><span id="line-22"></span><span class="hs-comment">--</span><span>
+</span><span id="line-23"></span><span class="hs-comment">-- Instances should obey the law @'catch' ('throw' x) f@ &#8801; @'pure' (f x)@.</span><span>
+</span><span id="line-24"></span><span class="hs-keyword">class</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span id="Error"><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-var">Error</span></a></span></span><span> </span><span id="local-6989586621679065437"><span class="annot"><a href="#local-6989586621679065437"><span class="hs-identifier hs-type">e</span></a></span></span><span> </span><span id="local-6989586621679065438"><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-25"></span><span>  </span><span class="hs-comment">-- | Raises an error of type @e@.</span><span>
+</span><span id="line-26"></span><span>  </span><span id="local-6989586621679065441"><span id="throw"><span class="annot"><a href="Control.Effect.Error.html#throw"><span class="hs-identifier hs-type">throw</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679065437"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065441"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-27"></span><span>  </span><span class="hs-comment">-- | Runs the given sub-computation. If it raises an error of type @e@, the error is provided to</span><span>
+</span><span id="line-28"></span><span>  </span><span class="hs-comment">-- the given handler function, and execution resumes from the point of the call to 'catch'.</span><span>
+</span><span id="line-29"></span><span>  </span><span id="local-6989586621679065440"><span id="catch"><span class="annot"><a href="Control.Effect.Error.html#catch"><span class="hs-identifier hs-type">catch</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065440"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679065437"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065440"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679065438"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065440"><span class="hs-identifier hs-type">a</span></a></span></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span id="local-6989586621679065386"><span id="local-6989586621679065387"><span id="local-6989586621679065388"><span class="hs-keyword">instance</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679065388"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065387"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Control.Effect.Internal.html#Send"><span class="hs-identifier hs-type">Send</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065386"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679065388"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065387"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065386"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Control.Effect.Internal.html#EffT"><span class="hs-identifier hs-type">EffT</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065388"><span class="hs-identifier hs-type">t</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065387"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-32"></span><span>  </span><span id="local-6989586621679065381"><span class="annot"><span class="annottext">throw :: e -&gt; EffT t m a
+</span><a href="#local-6989586621679065381"><span class="hs-identifier hs-var hs-var hs-var hs-var">throw</span></a></span></span><span> </span><span id="local-6989586621679065380"><span class="annot"><span class="annottext">e :: e
+</span><a href="#local-6989586621679065380"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(forall (n :: * -&gt; *). Error e n =&gt; n a) -&gt; EffT t m a
+forall (eff :: EffectK) (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+Send eff t m =&gt;
+(forall (n :: * -&gt; *). eff n =&gt; n a) -&gt; EffT t m a
+</span><a href="Control.Effect.Internal.html#send"><span class="hs-identifier hs-var">send</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065386"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">e -&gt; n a
+forall e (m :: * -&gt; *) a. Error e m =&gt; e -&gt; m a
+</span><a href="Control.Effect.Error.html#throw"><span class="hs-identifier hs-var">throw</span></a></span><span> </span><span class="annot"><span class="annottext">e
+</span><a href="#local-6989586621679065380"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#throw"><span class="hs-pragma hs-type">throw</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-34"></span><span>  </span><span id="local-6989586621679065378"><span class="annot"><span class="annottext">catch :: EffT t m a -&gt; (e -&gt; EffT t m a) -&gt; EffT t m a
+</span><a href="#local-6989586621679065378"><span class="hs-identifier hs-var hs-var hs-var hs-var">catch</span></a></span></span><span> </span><span id="local-6989586621679065377"><span class="annot"><span class="annottext">m :: EffT t m a
+</span><a href="#local-6989586621679065377"><span class="hs-identifier hs-var">m</span></a></span></span><span> </span><span id="local-6989586621679065376"><span class="annot"><span class="annottext">f :: e -&gt; EffT t m a
+</span><a href="#local-6989586621679065376"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Error e (t m) =&gt; t m a)
+-&gt; ((MonadTransControl t, Error e m) =&gt; t m a) -&gt; EffT t m a
+forall (eff :: EffectK) (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+Send eff t m =&gt;
+(eff (t m) =&gt; t m a)
+-&gt; ((MonadTransControl t, eff m) =&gt; t m a) -&gt; EffT t m a
+</span><a href="Control.Effect.Internal.html#sendWith"><span class="hs-identifier hs-var">sendWith</span></a></span><span> </span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065386"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t m a -&gt; (e -&gt; t m a) -&gt; t m a
+forall e (m :: * -&gt; *) a. Error e m =&gt; m a -&gt; (e -&gt; m a) -&gt; m a
+</span><a href="Control.Effect.Error.html#catch"><span class="hs-identifier hs-var">catch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EffT t m a -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+EffT t m a -&gt; t m a
+</span><a href="Control.Effect.Internal.html#runEffT"><span class="hs-identifier hs-var hs-var">runEffT</span></a></span><span> </span><span class="annot"><span class="annottext">EffT t m a
+</span><a href="#local-6989586621679065377"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">EffT t m a -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+EffT t m a -&gt; t m a
+</span><a href="Control.Effect.Internal.html#runEffT"><span class="hs-identifier hs-var hs-var">runEffT</span></a></span><span> </span><span class="annot"><span class="annottext">(EffT t m a -&gt; t m a) -&gt; (e -&gt; EffT t m a) -&gt; e -&gt; t m a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; EffT t m a
+</span><a href="#local-6989586621679065376"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-36"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Run t -&gt; m (StT t a)) -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+(MonadTransControl t, Monad m, Monad (t m)) =&gt;
+(Run t -&gt; m (StT t a)) -&gt; t m a
+</span><a href="Control.Effect.Internal.html#controlT"><span class="hs-identifier hs-var">controlT</span></a></span><span> </span><span class="annot"><span class="annottext">((Run t -&gt; m (StT t a)) -&gt; t m a)
+-&gt; (Run t -&gt; m (StT t a)) -&gt; t m a
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="hs-glyph">\</span><span id="local-6989586621679065371"><span class="annot"><span class="annottext">run :: Run t
+</span><a href="#local-6989586621679065371"><span class="hs-identifier hs-var">run</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">m (StT t a) -&gt; (e -&gt; m (StT t a)) -&gt; m (StT t a)
+forall e (m :: * -&gt; *) a. Error e m =&gt; m a -&gt; (e -&gt; m a) -&gt; m a
+</span><a href="Control.Effect.Error.html#catch"><span class="hs-identifier hs-var">catch</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t m a -&gt; m (StT t a)
+Run t
+</span><a href="#local-6989586621679065371"><span class="hs-identifier hs-var">run</span></a></span><span> </span><span class="annot"><span class="annottext">(t m a -&gt; m (StT t a)) -&gt; t m a -&gt; m (StT t a)
+forall a b. (a -&gt; b) -&gt; a -&gt; b
+</span><span class="hs-operator hs-var">$</span></span><span> </span><span class="annot"><span class="annottext">EffT t m a -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+EffT t m a -&gt; t m a
+</span><a href="Control.Effect.Internal.html#runEffT"><span class="hs-identifier hs-var hs-var">runEffT</span></a></span><span> </span><span class="annot"><span class="annottext">EffT t m a
+</span><a href="#local-6989586621679065377"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">t m a -&gt; m (StT t a)
+Run t
+</span><a href="#local-6989586621679065371"><span class="hs-identifier hs-var">run</span></a></span><span> </span><span class="annot"><span class="annottext">(t m a -&gt; m (StT t a)) -&gt; (e -&gt; t m a) -&gt; e -&gt; m (StT t a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">EffT t m a -&gt; t m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+EffT t m a -&gt; t m a
+</span><a href="Control.Effect.Internal.html#runEffT"><span class="hs-identifier hs-var hs-var">runEffT</span></a></span><span> </span><span class="annot"><span class="annottext">(EffT t m a -&gt; t m a) -&gt; (e -&gt; EffT t m a) -&gt; e -&gt; t m a
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">e -&gt; EffT t m a
+</span><a href="#local-6989586621679065376"><span class="hs-identifier hs-var">f</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-pragma">{-# INLINABLE</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#catch"><span class="hs-pragma hs-type">catch</span></a></span><span> </span><span class="hs-pragma">#-}</span></span></span></span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span id="local-6989586621679065369"><span id="local-6989586621679065370"><span class="hs-keyword">instance</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monad</span></span><span> </span><span class="annot"><a href="#local-6989586621679065370"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#Error"><span class="hs-identifier hs-type">Error</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065369"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="#local-6989586621679065369"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065370"><span class="hs-identifier hs-type">m</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-40"></span><span>  </span><span id="local-6989586621679065365"><span class="annot"><span class="annottext">throw :: e -&gt; ExceptT e m a
+</span><a href="#local-6989586621679065365"><span class="hs-identifier hs-var hs-var hs-var hs-var">throw</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">e -&gt; ExceptT e m a
+forall (m :: * -&gt; *) e a. Monad m =&gt; e -&gt; ExceptT e m a
+</span><span class="hs-identifier hs-var">Trans.throwE</span></span><span>
+</span><span id="line-41"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#throw"><span class="hs-pragma hs-type">throw</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-42"></span><span>  </span><span id="local-6989586621679065363"><span class="annot"><span class="annottext">catch :: ExceptT e m a -&gt; (e -&gt; ExceptT e m a) -&gt; ExceptT e m a
+</span><a href="#local-6989586621679065363"><span class="hs-identifier hs-var hs-var hs-var hs-var">catch</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExceptT e m a -&gt; (e -&gt; ExceptT e m a) -&gt; ExceptT e m a
+forall (m :: * -&gt; *) e a e'.
+Monad m =&gt;
+ExceptT e m a -&gt; (e -&gt; ExceptT e' m a) -&gt; ExceptT e' m a
+</span><span class="hs-identifier hs-var">Trans.catchE</span></span><span>
+</span><span id="line-43"></span><span>  </span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#catch"><span class="hs-pragma hs-type">catch</span></a></span><span> </span><span class="hs-pragma">#-}</span></span></span><span>
+</span><span id="line-44"></span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- | Handles an @'Error' e@ effect. Returns 'Left' if the computation raised an uncaught error,</span><span>
+</span><span id="line-46"></span><span class="hs-comment">-- otherwise returns 'Right'.</span><span>
+</span><span id="line-47"></span><span id="local-6989586621679065359"><span id="local-6989586621679065360"><span id="local-6989586621679065361"><span class="annot"><a href="Control.Effect.Error.html#runError"><span class="hs-identifier hs-type">runError</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Control.Effect.Internal.html#EffT"><span class="hs-identifier hs-type">EffT</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">ExceptT</span></span><span> </span><span class="annot"><a href="#local-6989586621679065361"><span class="hs-identifier hs-type">e</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="#local-6989586621679065360"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065359"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679065360"><span class="hs-identifier hs-type">m</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="#local-6989586621679065361"><span class="hs-identifier hs-type">e</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679065359"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">)</span></span></span></span><span>
+</span><span id="line-48"></span><span id="runError"><span class="annot"><span class="annottext">runError :: EffT (ExceptT e) m a -&gt; m (Either e a)
+</span><a href="Control.Effect.Error.html#runError"><span class="hs-identifier hs-var hs-var">runError</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">ExceptT e m a -&gt; m (Either e a)
+forall e (m :: * -&gt; *) a. ExceptT e m a -&gt; m (Either e a)
+</span><span class="hs-identifier hs-var">runExceptT</span></span><span> </span><span class="annot"><span class="annottext">(ExceptT e m a -&gt; m (Either e a))
+-&gt; (EffT (ExceptT e) m a -&gt; ExceptT e m a)
+-&gt; EffT (ExceptT e) m a
+-&gt; m (Either e a)
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">EffT (ExceptT e) m a -&gt; ExceptT e m a
+forall (t :: (* -&gt; *) -&gt; * -&gt; *) (m :: * -&gt; *) a.
+EffT t m a -&gt; t m a
+</span><a href="Control.Effect.Internal.html#runEffT"><span class="hs-identifier hs-var hs-var">runEffT</span></a></span><span>
+</span><span id="line-49"></span><span class="hs-pragma">{-# INLINE</span><span> </span><span class="annot"><a href="Control.Effect.Error.html#runError"><span class="hs-pragma hs-type">runError</span></a></span><span> </span><span class="hs-pragma">#-}</span><span>
+</span><span id="line-50"></span></pre></body></html>
