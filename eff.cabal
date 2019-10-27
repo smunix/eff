@@ -1,0 +1,11 @@
+-- This file has been generated from stack.yaml by hpack version 0.28.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: b1e6090cbb10267fd0062bc50d28358f688549bb090e057b94f502629db41c68
+
+name:           eff
+version:        0.0.0
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
